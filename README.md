@@ -2,7 +2,6 @@
 A simple framework for writing unit tests for your Project Zomboid mods.
 
 Refer to the included examplea for how to create tests. Its fairly straightforward and simple.
-I recommend duplicating and editing BlankTest.lua as a starting point.
 
 <img width="216" alt="image" src="https://github.com/Notloc/zomboid-automated-test-framework/assets/23246298/19c0d7c0-7605-4530-b185-b6f88d51e0fa">
 
