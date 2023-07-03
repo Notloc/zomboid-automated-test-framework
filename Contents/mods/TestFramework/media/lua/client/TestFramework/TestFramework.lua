@@ -6,7 +6,7 @@ if not ___GLOBAL_TEST_FRAMEWORK___ then
     local TestRunner = require "TestFramework/TestRunner"
 
     local TestFramework = {
-        hideExamples = false,
+        hideExamples = true,
         modules = {},
         onRegisteredCallbacks = {},
     }

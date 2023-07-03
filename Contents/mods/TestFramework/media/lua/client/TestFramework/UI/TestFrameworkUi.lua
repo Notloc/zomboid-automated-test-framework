@@ -176,6 +176,10 @@ function TestFrameworkUi:runTestsName(modName, moduleName, testName, testButton)
     TestFramework.RunByTest(modName, moduleName, testName, function(results)
         local fullName = modName .. "." .. moduleName .. "." .. testName
         colorButtonWithResults(testButton, results[fullName])
+
+        if testButton.parent then
+            TestFrameworkUi.updateErrorButton(testButton.parent, results[fullName].error)
+        end
     end)
 end
 
