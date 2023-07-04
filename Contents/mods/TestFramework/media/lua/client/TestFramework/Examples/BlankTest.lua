@@ -8,8 +8,16 @@ if true then return end -- Remove this line to enable this test module
 TestFramework.registerTestModule("YOUR_MOD_NAME", "NAME_FOR_THIS_GROUP_OF_TEST", function ()
     local Tests = {}
 
-    -- How to add code coverage for an object
-    --   TestFramework.addCodeCoverage(Tests, YOUR_OBJECT, "READABLE_NAME_FOR_THIS_OBJECT")
+    -- This function is called before the module is run
+    Tests._setup = function () end
+
+    -- This function is called after the module finishes running
+    Tests._teardown = function () end
+
+    --    Add code coverage for an object
+    --    Tracks what functions are called during testing
+    --    Optional 4th boolean to ignore inherited functions
+    --TestFramework.addCodeCoverage(Tests, YOUR_OBJECT, "READABLE_NAME_FOR_THIS_OBJECT")
 
     -- Regular test
     Tests.test_name = function ()

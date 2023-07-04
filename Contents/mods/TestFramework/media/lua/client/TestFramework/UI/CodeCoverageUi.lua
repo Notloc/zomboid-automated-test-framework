@@ -44,8 +44,9 @@ end
 
 function CodeCoverageUi:buildScrollPanel()
     self.scrollPanel:clearElements()
+    local scrollbarWidth = 13
 
-    local layout = VerticalLayout:new(0, 0, self.scrollPanel:getWidth(), self.scrollPanel:getHeight())
+    local layout = VerticalLayout:new(0, 0, self.scrollPanel:getWidth()-scrollbarWidth, self.scrollPanel:getHeight())
     layout.marginX = 6
     layout.marginY = 8
     layout.paddingY = 6
@@ -63,15 +64,23 @@ function CodeCoverageUi:buildScrollPanel()
         local coverage = coverageTable[data.target]
 
         if coverage then
+            local names = {}
+            for functionName, _ in pairs(coverage) do
+                table.insert(names, functionName)
+            end
+            table.sort(names)
+
+
             local targetCollapseList = CollapseList:new(0, 0, width, 20)
             local horizontalLayout = HorizontalLayout:new(0, 0, width-targetCollapseList.marginX, 20)
             local modLabel = ISLabel:new(0, 0, 20, name, 1, 1, 1, 1, UIFont.Medium)
             horizontalLayout:addElement(modLabel)
             targetCollapseList:addElement(horizontalLayout)
 
-            for functionName, wasCovered in pairs(coverage) do
-                local width = width - targetCollapseList.marginX*2
+            for _, functionName in pairs(names) do
+                local wasCovered = coverage[functionName]
 
+                local width = width - targetCollapseList.marginX*2
                 local horizontalLayout = HorizontalLayout:new(0, 0, width, 20)
                 local spacer = ISLabel:new(0, 0, 20, "    ", 1, 1, 1, 1, UIFont.Small)
                 local testLabel = ISLabel:new(0, 0, 20, functionName, 1, 1, 1, 1, UIFont.Small)

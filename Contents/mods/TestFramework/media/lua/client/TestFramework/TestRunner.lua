@@ -75,9 +75,7 @@ TestRunner.onTickFunction = function()
     if self.currentModule > #self.modules then
         TestRunner.terminate()
         self.completionCallback(self.results)
-
-        local coverageResults = CodeCoverage.coverageTable
-        return nil
+        return
     end
 
     local module = self.modules[self.currentModule]
@@ -89,9 +87,12 @@ TestRunner.onTickFunction = function()
         for name, test in pairs(tests) do
             table.insert(self.testDataList, {name = name, test = test})
         end
+
+        module:runSetup()
     end
 
     if self.currentTest > #self.testDataList then
+        module:runTeardown()
         self.currentModule = self.currentModule + 1
         self.currentTest = 1
         self.testDataList = nil
@@ -152,12 +153,6 @@ end
 
 function TestRunner:_hookCodeCoverage(module)
     local targets = module:getCodeCoverageTargets()
-    print("Hooking code coverage for " .. module.moduleName)
-    for _, data in pairs(targets) do
-        local name = data.name
-        print("Hooking " .. name)
-    end
-
     for _, data in pairs(targets) do
         local name = data.name
         local target = data.target

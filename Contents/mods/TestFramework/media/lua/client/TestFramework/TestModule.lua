@@ -13,7 +13,6 @@ function TestModule:new(modName, moduleName, testProvider)
     o.testObject = nil
     o.tests = nil
 
-
     return o
 end
 
@@ -28,8 +27,14 @@ function TestModule:prepareTests()
     self.testNames = {}
     for key, test in pairs(obj) do
         if type(test) == "function" then
-            self.tests[key] = test
-            table.insert(self.testNames, key)
+            if key == "_setup" then
+                self.setup = test
+            elseif key == "_teardown" then
+                self.teardown = test
+            else
+                self.tests[key] = test
+                table.insert(self.testNames, key)
+            end
         end
     end
 end
@@ -66,6 +71,18 @@ end
 
 function TestModule:getCodeCoverageTargets()
     return self.testObject and self.testObject.___codeCoverageTargets or {}
+end
+
+function TestModule:runSetup()
+    if self.setup then
+        self.setup()
+    end
+end
+
+function TestModule:runTeardown()
+    if self.teardown then
+        self.teardown()
+    end
 end
 
 return TestModule

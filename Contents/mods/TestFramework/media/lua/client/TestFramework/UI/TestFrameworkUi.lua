@@ -209,8 +209,9 @@ end
 
 function TestFrameworkUi:rebuildScrollPanel()
     self.scrollPanel:clearElements()
+    local scrollbarWidth = 13
 
-    local layout = VerticalLayout:new(0, 0, self.scrollPanel:getWidth(), self.scrollPanel:getHeight())
+    local layout = VerticalLayout:new(0, 0, self.scrollPanel:getWidth()-scrollbarWidth, self.scrollPanel:getHeight())
     layout.marginX = 12
     layout.marginY = 8
     layout.paddingY = 6
