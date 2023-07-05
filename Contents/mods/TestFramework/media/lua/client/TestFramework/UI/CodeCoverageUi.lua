@@ -64,17 +64,29 @@ function CodeCoverageUi:buildScrollPanel()
         local coverage = coverageTable[data.target]
 
         if coverage then
+            local coveredCount = 0
+            local totalCount = 0
+
             local names = {}
-            for functionName, _ in pairs(coverage) do
+            for functionName, wasCovered in pairs(coverage) do
                 table.insert(names, functionName)
+                if wasCovered then
+                    coveredCount = coveredCount + 1
+                end
+                totalCount = totalCount + 1
             end
             table.sort(names)
 
+            local percent = math.floor(coveredCount / totalCount * 100)
 
             local targetCollapseList = CollapseList:new(0, 0, width, 20)
             local horizontalLayout = HorizontalLayout:new(0, 0, width-targetCollapseList.marginX, 20)
             local modLabel = ISLabel:new(0, 0, 20, name, 1, 1, 1, 1, UIFont.Medium)
+            local spacer = ISLabel:new(0, 0, 20, "    ", 1, 1, 1, 1, UIFont.Small)
+            local percentLabel = ISLabel:new(0, 0, 20, percent .. "%", 1, 1, 1, 1, UIFont.Large)
             horizontalLayout:addElement(modLabel)
+            horizontalLayout:addElement(spacer)
+            horizontalLayout:addElement(percentLabel)
             targetCollapseList:addElement(horizontalLayout)
 
             for _, functionName in pairs(names) do
