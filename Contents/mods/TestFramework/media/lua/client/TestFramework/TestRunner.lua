@@ -102,6 +102,7 @@ TestRunner.onTickFunction = function()
     if self.activeAsyncTest then
         self.activeAsyncTest:tick()
         if self.activeAsyncTest.completed then
+            self.activeAsyncTest:runFinally()
             self.results[self.activeAsyncTestName] = self.activeAsyncTest.results
             self.progressCallback(self.activeAsyncTestName, self.activeAsyncTest.results)
             self.activeAsyncTest = nil

@@ -1,3 +1,5 @@
+local TestUtils = require("TestFramework/TestUtils")
+
 local AsyncTest = {}
 
 local NEXT = "next"
@@ -24,8 +26,44 @@ function AsyncTest:new()
     self.__index = self
     o.___IS_ASYNC_TEST___ = true
     o.steps = {}
+    o._finallyCallbacks = {}
 
     return o
+end
+
+function AsyncTest.renderTest(uiElement)
+    return AsyncTest.assertFunctionWasCalled(uiElement, "render")
+end
+
+function AsyncTest.prerenderTest(uiElement)
+    return AsyncTest.assertFunctionWasCalled(uiElement, "prerender")
+end
+
+function AsyncTest.assertFunctionWasCalled(obj, functionName)
+    local success = false
+    local og_func = obj[functionName]
+
+    if not og_func then
+        error("Object does not have function " .. functionName)
+    end
+
+    obj[functionName] = function(...)
+        og_func(...)
+        success = true
+    end
+
+    local asyncTest = AsyncTest:new()
+        :next(function() end)
+        :next(function()
+            if not success then
+                error("Function " .. functionName .. " was not called")
+            end
+        end)
+        :finally(function()
+            obj[functionName] = og_func
+        end)
+
+    return asyncTest
 end
 
 function AsyncTest:pass()
@@ -117,7 +155,7 @@ function AsyncTest:repeatUntil(callback, autoFailTime)
     if not autoFailTime then
         autoFailTime = 10000
     end
-    
+
     local step = {
         type = REPEAT_UNTIL,
         callback = callback,
@@ -125,6 +163,17 @@ function AsyncTest:repeatUntil(callback, autoFailTime)
     }
     table.insert(self.steps, step)
     return self
+end
+
+function AsyncTest:finally(callback)
+    table.insert(self._finallyCallbacks, callback)
+    return self
+end
+
+function AsyncTest:runFinally()
+    for _, callback in ipairs(self._finallyCallbacks) do
+        pcall(callback)
+    end
 end
 
 return AsyncTest

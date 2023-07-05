@@ -87,5 +87,21 @@ TestFramework.registerTestModule("Test Framework Examples", "Async Tests", funct
             end)
     end
 
+    Tests.finallyTest = function ()
+        return AsyncTest:new()
+            :next(function ()
+                error("This step will fail")
+            end)
+            :finally(function ()
+                -- This step will always be executed, even if the test fails
+                -- It is useful for cleaning up
+                print("This step will always be executed")
+            end)
+            :finally(function ()
+                -- Multiple finally steps can be added if needed
+                print("This step will also always be executed")
+            end)
+    end
+
     return Tests
 end)
