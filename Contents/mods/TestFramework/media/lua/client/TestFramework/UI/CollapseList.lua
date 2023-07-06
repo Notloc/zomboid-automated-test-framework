@@ -32,9 +32,14 @@ function CollapseList:clearElements()
 end
 
 function CollapseList:onToggle()
-    self.isCollapsed = not self.isCollapsed
+    self:setCollapsed(not self.isCollapsed)
+end
+
+function CollapseList:setCollapsed(isCollapsed)
+    self.isCollapsed = isCollapsed
     self:applyMaxDrawHeight()
 end
+
 
 function CollapseList:applyMaxDrawHeight()
     if self.isCollapsed then

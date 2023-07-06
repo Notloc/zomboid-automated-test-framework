@@ -12,11 +12,19 @@ function TestModule:new(modName, moduleName, testProvider)
     o.testProvider = testProvider
     o.testObject = nil
     o.tests = nil
+    o.data = nil
 
     return o
 end
 
-function TestModule:prepareTests()
+function TestModule:getData()
+    if not self.data then
+        self:parseTestProvider()
+    end
+    return self.data
+end
+
+function TestModule:parseTestProvider()
     local obj = self.testProvider()
     if type(obj) ~= "table" then
         return error("Test providers must return a table of test functions.")
@@ -35,20 +43,26 @@ function TestModule:prepareTests()
                 self.tests[key] = test
                 table.insert(self.testNames, key)
             end
+        elseif type(test) == "table" and key == "_moduleData" then
+            self.data = test
         end
+    end
+
+    if not self.data then
+        self.data = {}
     end
 end
 
 function TestModule:getTestNames()
     if not self.testNames then
-        self:prepareTests()
+        self:parseTestProvider()
     end
     return self.testNames
 end
 
 function TestModule:getTests()
     local modulePrefix = self.modName.."."..self.moduleName.."."
-    self:prepareTests()
+    self:parseTestProvider()
 
     local tests = {}
     for name, test in pairs(self.tests) do
@@ -59,7 +73,7 @@ end
 
 function TestModule:getTestByName(testName)
     local fullName = self.modName.."."..self.moduleName.."."..testName
-    self:prepareTests()
+    self:parseTestProvider()
 
     if not self.tests[testName] then
         return error("No test found with name: "..fullName)

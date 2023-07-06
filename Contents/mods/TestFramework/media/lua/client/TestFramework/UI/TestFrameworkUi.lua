@@ -8,10 +8,16 @@ local VerticalLayout = require "TestFramework/UI/VerticalLayout"
 local HorizontalLayout = require "TestFramework/UI/HorizontalLayout"
 local CollapseList = require "TestFramework/UI/CollapseList"
 
-TestFrameworkUi = ISPanel:derive("TestFrameworkUi")
+local CodeCoverageUi = require "TestFramework/UI/CodeCoverageUi"
+local TestFrameworkSettingsUi = require "TestFramework/UI/TestFrameworkSettingsUi"
+
+local SETTINGS_HEIGHT = 40
+
+
+local TestFrameworkUi = ISPanel:derive("TestFrameworkUi")
 
 TestFrameworkUi.new = function(self, x, y, width, height)
-    o = ISPanel:new(x, y, width, height)
+    local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
 
@@ -27,7 +33,10 @@ function TestFrameworkUi:createChildren()
     self.closeButton:setAnchorRight(true)
     self:addChild(self.closeButton)
 
-    self.scrollPanel = ScrollPanel:new(0, 30, self.width, self.height-30)
+    self.settingsPanel = TestFrameworkSettingsUi:new(0, 30, self.width, SETTINGS_HEIGHT)
+    self:addChild(self.settingsPanel)
+
+    self.scrollPanel = ScrollPanel:new(0, 30+SETTINGS_HEIGHT, self.width, self.height-30-SETTINGS_HEIGHT)
     self:addChild(self.scrollPanel)
     self:rebuildScrollPanel()
 end
@@ -222,9 +231,11 @@ function TestFrameworkUi:rebuildScrollPanel()
     layout.marginY = 8
     layout.paddingY = 6
 
+    self.collapseMap = {}
+
     local buttonsByMod = {}
 
-    local width = self.scrollPanel:getWidth() - layout.marginX*2
+    local width = self.scrollPanel:getWidth() - layout.marginX*2 - scrollbarWidth + 5
     for modName, moduleGroup in pairs(TestFramework.modules) do
         local modCollapseList = CollapseList:new(0, 0, width, 20)
 
@@ -244,8 +255,18 @@ function TestFrameworkUi:rebuildScrollPanel()
         local moduleParentButtons = {}
         buttonsByMod[modName] = allTestButtons
 
-        local width = width - modCollapseList.marginX
+        local moduleNames = {}
         for moduleName, module in pairs(moduleGroup) do
+            table.insert(moduleNames, moduleName)
+        end
+        table.sort(moduleNames)
+
+        self.collapseMap[modName] = modCollapseList
+
+        local width = width - modCollapseList.marginX
+        for _, moduleName in ipairs(moduleNames) do
+            local module = moduleGroup[moduleName]
+
             local moduleCollapseList = CollapseList:new(0, 0, width, 20)
             local width = width - moduleCollapseList.marginX
 
@@ -264,6 +285,8 @@ function TestFrameworkUi:rebuildScrollPanel()
 
             local allModuleButtons = {}
             allTestButtons[moduleName] = allModuleButtons
+
+            self.collapseMap[modName .. "." .. moduleName] = moduleCollapseList
 
             for _, testName in ipairs(module:getTestNames()) do
                 local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width, 20)
@@ -328,6 +351,22 @@ function TestFrameworkUi:openModCoverage(modName)
     coverageUi:addToUIManager()
 end
 
+function TestFrameworkUi:getCollapseState()
+    local collapseState = {}
+    for k, v in pairs(self.collapseMap) do
+        collapseState[k] = v.isCollapsed
+    end
+    return collapseState
+end
+
+function TestFrameworkUi:setCollapseState(collapseState)
+    for k, v in pairs(collapseState) do
+        if self.collapseMap[k] then
+            self.collapseMap[k]:setCollapsed(v)
+        end
+    end
+end
+
 TestFrameworkUi.prerender = function(self)
     ISPanel.prerender(self)
 
@@ -340,30 +379,4 @@ TestFrameworkUi.prerender = function(self)
     self:drawRectBorder(0, 0, self.width, self.height, 1, 1, 1, 1)
 end
 
-TestFrameworkUi.uiInstance = nil
-
-Events.OnLoad.Add(function ()
-    Events.OnKeyPressed.Add(function(key)
-        local uiInstance = TestFrameworkUi.uiInstance
-        local openKey = getCore():getKey("test_framework_open_test_window")
-        if key == openKey then
-            if not uiInstance then
-                uiInstance = TestFrameworkUi:new(getCore():getScreenWidth()-425, 0, 425, 500)
-                uiInstance:initialise()
-                uiInstance:addToUIManager()
-                uiInstance:setVisible(true)
-                TestFrameworkUi.uiInstance = uiInstance
-
-                TestFramework.OnModuleRegisteredSubscribe(function(a,b)
-                    uiInstance:rebuildScrollPanel()
-                end)
-            else
-                if uiInstance:isVisible() then
-                    uiInstance:setVisible(false)
-                else
-                    uiInstance:setVisible(true)
-                end
-            end
-        end
-    end)
-end)
+return TestFrameworkUi

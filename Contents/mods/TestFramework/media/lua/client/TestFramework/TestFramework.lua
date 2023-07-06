@@ -6,9 +6,19 @@ if not ___GLOBAL_TEST_FRAMEWORK___ then
     local TestRunner = require "TestFramework/TestRunner"
 
     local TestFramework = {
-        hideExamples = true,
+        hideExamples = true, -- Set to false to show example test modules in the UI
         modules = {},
         onRegisteredCallbacks = {},
+
+        _coreFiles = {
+            "client/TestFramework/TestUtils.lua",
+            "client/TestFramework/AsyncTest.lua",
+            "client/TestFramework/TestFramework.lua",
+            "client/TestFramework/UI/TestFrameworkSettingsUi.lua",
+            "client/TestFramework/UI/TestFrameworkUi.lua",
+            "client/TestFramework/UI/CodeCoverageUi.lua",
+        },
+        _binderFile = "client/TestFramework/UI/TestFrameworkUiBinder.lua"
     }
     ___GLOBAL_TEST_FRAMEWORK___ = TestFramework
 
@@ -35,17 +45,20 @@ if not ___GLOBAL_TEST_FRAMEWORK___ then
         table.insert(tests.___codeCoverageTargets, {name = name, target = target, ignoreInherited = true})
     end
 
+    TestFramework.registerFileForReload = function (filePath)
+        table.insert(TestFramework._coreFiles, filePath)
+    end
 
     TestFramework.OnModuleRegistered = function(modName, moduleName)
         for _, callback in pairs(TestFramework.onRegisteredCallbacks) do
             callback(modName, moduleName)
         end
     end
-    
+
     TestFramework.OnModuleRegisteredSubscribe = function(callback)
         TestFramework.onRegisteredCallbacks[callback] = callback
     end
-    
+
     TestFramework.OnModuleRegisteredUnsubscribe = function(callback)
         TestFramework.onRegisteredCallbacks[callback] = nil
     end
@@ -110,6 +123,73 @@ if not ___GLOBAL_TEST_FRAMEWORK___ then
             }
             TestRunner:new():runTests(testsByModule, completionCallback, progressCallback)
         end
+    end
+
+    local function getPathMap()
+        if ___GLOBAL_TEST_FRAMEWORK_PATH_MAP___ then
+            return ___GLOBAL_TEST_FRAMEWORK_PATH_MAP___
+        end
+
+        local pathMap = {}
+
+        local c = getLoadedLuaCount();
+
+        for i = 0, c-1 do
+            local path = getLoadedLua(i);
+            local name = getShortenedFilename(path);
+
+            pathMap[name] = path
+        end
+
+        ___GLOBAL_TEST_FRAMEWORK_PATH_MAP___ = pathMap
+        return pathMap
+    end
+
+    local function reloadWithSafeErrors(pathMap, fileName)
+        local fullPath = pathMap[fileName]
+        if fullPath then
+            reloadLuaFile(fullPath)
+        else
+            pcall(function()
+                error(fileName.." not found.")
+            end)
+        end
+    end
+
+    function TestFramework.reload()
+        local modules = TestFramework.modules
+
+        local carryOverModules = {}
+        local reloadModules = {}
+        for modName, modModules in pairs(modules) do
+            for moduleName, module in pairs(modModules) do
+                if not module:getData().filePath then
+                    carryOverModules[modName] = carryOverModules[modName] or {}
+                    carryOverModules[modName][moduleName] = module
+                else
+                    table.insert(reloadModules, module:getData().filePath)
+                end
+            end
+        end
+
+        ___GLOBAL_TEST_FRAMEWORK___ = nil
+
+        local pathMap = getPathMap()
+        for _, file in ipairs(TestFramework._coreFiles) do
+            reloadWithSafeErrors(pathMap, file)
+        end
+
+        for modName, modModules in pairs(carryOverModules) do
+            for moduleName, module in pairs(modModules) do
+                ___GLOBAL_TEST_FRAMEWORK___.registerTestModule(modName, moduleName, module.testProvider)
+            end
+        end
+
+        for _, file in ipairs(reloadModules) do
+            reloadWithSafeErrors(pathMap, file)
+        end
+
+        reloadWithSafeErrors(pathMap, TestFramework._binderFile)
     end
 end
 

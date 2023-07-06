@@ -8,7 +8,7 @@ local VerticalLayout = require "TestFramework/UI/VerticalLayout"
 local HorizontalLayout = require "TestFramework/UI/HorizontalLayout"
 local CollapseList = require "TestFramework/UI/CollapseList"
 
-CodeCoverageUi = ISPanel:derive("CodeCoverageUi")
+local CodeCoverageUi = ISPanel:derive("CodeCoverageUi")
 
 function CodeCoverageUi:new(x, y, width, height, modName, moduleName)
     o = ISPanel:new(x, y, width, height)
@@ -149,3 +149,5 @@ CodeCoverageUi.prerender = function(self)
 
     self:drawRectBorder(0, 0, self.width, self.height, 1, 1, 1, 1)
 end
+
+return CodeCoverageUi

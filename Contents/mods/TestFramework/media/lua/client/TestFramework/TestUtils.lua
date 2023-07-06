@@ -1,5 +1,22 @@
 local TestUtils = {}
 
+TestUtils.newTestModule = function(filePath)
+    local tests = {}
+
+    if filePath then
+        local extension = string.match(filePath, "%.(%w+)$")
+        if not extension then
+            filePath = filePath..".lua"
+        end
+    end
+
+    tests._moduleData = {
+        filePath = filePath
+    }
+
+    return tests
+end
+
 TestUtils.fail = function(message)
     if message then
         return error("Test Failed: "..message)
