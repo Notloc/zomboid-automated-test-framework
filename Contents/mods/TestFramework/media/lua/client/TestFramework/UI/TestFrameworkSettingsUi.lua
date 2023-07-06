@@ -3,10 +3,13 @@ require "ISUI/ISUIElement"
 local TestFramework = require("TestFramework/TestFramework")
 local TestFrameworkSettingsUi = ISUIElement:derive("TestFrameworkSettingsUi")
 
-function TestFrameworkSettingsUi:new(x, y, width, height)
+function TestFrameworkSettingsUi:new(x, y, width, height, CodeCoverageUiClass)
     local o = ISUIElement:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
+
+    o.CodeCoverageUiClass = CodeCoverageUiClass
+
     return o
 end
 
@@ -30,6 +33,7 @@ function TestFrameworkSettingsUi:onBreakOnError()
 end
 
 function TestFrameworkSettingsUi:onQuickReload()
+    self.CodeCoverageUiClass.closeAll()
     TestFramework.reload()
 end
 

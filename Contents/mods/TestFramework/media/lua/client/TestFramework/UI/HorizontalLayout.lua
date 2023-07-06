@@ -16,10 +16,16 @@ function HorizontalLayout:addElement(element)
     LayoutElement.addElement(self, element)
 end
 
+function HorizontalLayout:addSpacer(width)
+    local spacer = ISUIElement:new(0, 0, width, 0)
+    self:addElement(spacer)
+    return spacer
+end
+
 function HorizontalLayout:reflow()
     LayoutElement.reflow(self)
 
-    local x = self.marginX
+    local x = self.marginLeft or self.marginX
     local y = self.marginY
     for _, element in ipairs(self.elements) do
         element:setX(x)

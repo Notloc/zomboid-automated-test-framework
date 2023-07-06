@@ -27,7 +27,7 @@ end
 function ScrollPanel:addElement(element)
     element.keepOnScreen = false
     LayoutElement.addElement(self, element);
-    element:setY(element:getY() + self:getYScroll())
+    element:setY(element:getY() + self:getYScroll());
 end
 
 function ScrollPanel:isElementVisible(element)
@@ -60,9 +60,14 @@ function ScrollPanel:onMouseWheel(del)
     return true;
 end
 
+function ScrollPanel:clearElements()
+    LayoutElement.clearElements(self);
+    self.lastY = 0;
+end
+
 function ScrollPanel:reflow()
     LayoutElement.reflow(self);
-    
+
     local height = 0;
     for _, element in ipairs(self.elements) do
         height = height + element:getHeight() + self.paddingY;

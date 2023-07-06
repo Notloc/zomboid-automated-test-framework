@@ -58,8 +58,12 @@ function LayoutElement:reflow()
 end
 
 function LayoutElement:prerender()
+    local leftOffset = self.marginLeft or self.marginX or 0
     if self.backgroundColor then
-        self:drawRect(0, 0, self.width, self.height, self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g, self.backgroundColor.b)
+        self:drawRect(leftOffset, 0, self:getWidth() - leftOffset, self:getHeight(), self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g, self.backgroundColor.b)
+    end
+    if self.borderColor then
+        self:drawRectBorder(leftOffset, 0, self:getWidth() - leftOffset, self:getHeight(), self.borderColor.a, self.borderColor.r, self.borderColor.g, self.borderColor.b)
     end
 end
 

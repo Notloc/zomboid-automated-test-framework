@@ -4,6 +4,7 @@ if not ___GLOBAL_TEST_FRAMEWORK___ then
     local TestUtils = require "TestFramework/TestUtils"
     local TestModule = require "TestFramework/TestModule"
     local TestRunner = require "TestFramework/TestRunner"
+    local CodeCoverage = require "TestFramework/CodeCoverage"
 
     local TestFramework = {
         hideExamples = true, -- Set to false to show example test modules in the UI
@@ -173,6 +174,8 @@ if not ___GLOBAL_TEST_FRAMEWORK___ then
         end
 
         ___GLOBAL_TEST_FRAMEWORK___ = nil
+
+        CodeCoverage.clearCoverage()
 
         local pathMap = getPathMap()
         for _, file in ipairs(TestFramework._coreFiles) do

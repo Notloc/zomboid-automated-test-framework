@@ -59,6 +59,7 @@ function TestRunner:runTests(testsByModule, completionCallback, progressCallback
 
     TestRunner.activeRunner = self
 
+    CodeCoverage.clearCoverage()
     for _, module in pairs(self.modules) do
         self:_hookCodeCoverage(module)
     end

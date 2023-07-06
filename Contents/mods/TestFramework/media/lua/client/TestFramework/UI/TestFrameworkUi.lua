@@ -13,6 +13,9 @@ local TestFrameworkSettingsUi = require "TestFramework/UI/TestFrameworkSettingsU
 
 local SETTINGS_HEIGHT = 40
 
+local BORDER_COLOR = {r=1, g=1, b=1, a=0.4}
+local RED = {r=0.7, g=0, b=0, a=0.4}
+local GREEN = {r=0, g=0.7, b=0, a=0.4}
 
 local TestFrameworkUi = ISPanel:derive("TestFrameworkUi")
 
@@ -33,7 +36,7 @@ function TestFrameworkUi:createChildren()
     self.closeButton:setAnchorRight(true)
     self:addChild(self.closeButton)
 
-    self.settingsPanel = TestFrameworkSettingsUi:new(0, 30, self.width, SETTINGS_HEIGHT)
+    self.settingsPanel = TestFrameworkSettingsUi:new(0, 30, self.width, SETTINGS_HEIGHT, CodeCoverageUi)
     self:addChild(self.settingsPanel)
 
     self.scrollPanel = ScrollPanel:new(0, 30+SETTINGS_HEIGHT, self.width, self.height-30-SETTINGS_HEIGHT)
@@ -89,14 +92,14 @@ local function colorButtonWithResults(button, results)
     end
 
     if allPassed then
-        button.backgroundColor = {r=0, g=0.7, b=0, a=0.5}
+        button.backgroundColor = GREEN
         if button.parent then 
-            button.parent.backgroundColor = {r=0, g=0.7, b=0, a=0.5}
+            button.parent.backgroundColor = GREEN
         end
     else
-        button.backgroundColor = {r=0.7, g=0, b=0, a=0.5}
+        button.backgroundColor = RED
         if button.parent then 
-            button.parent.backgroundColor = {r=0.7, g=0, b=0, a=0.5}
+            button.parent.backgroundColor = RED
         end
     end
 
@@ -123,9 +126,19 @@ local function flattenModuleButtonMap(moduleButtons, modName, moduleName)
     return flattened
 end
 
+function TestFrameworkUi:clearButtons()
+    for _, button in pairs(self.allButtons) do
+        button.backgroundColor = {r=0, g=0, b=0, a=1}
+        if button.parent then
+            button.parent.backgroundColor = {r=0, g=0, b=0, a=1}
+        end
+    end
+end
+
 function TestFrameworkUi:runTestsMod(modName, modButton, allTestButtons, moduleParentButtons)
+    self:clearButtons()
     local flattedTestButtons = flattenModButtonMap(allTestButtons, modName)
-    
+
     TestFramework.RunByMod(modName,
         -- Completion callback
         function(results)
@@ -146,6 +159,8 @@ function TestFrameworkUi:runTestsMod(modName, modButton, allTestButtons, moduleP
                     colorButtonWithResults(moduleButton, modulePassed)
                 end
             end
+
+            CodeCoverageUi.rebuildUis()
         end,
 
         -- Progress callback
@@ -162,6 +177,7 @@ function TestFrameworkUi:runTestsMod(modName, modButton, allTestButtons, moduleP
 end
 
 function TestFrameworkUi:runTestsModule(modName, moduleName, moduleButton, allTestButtons)
+    self:clearButtons()
     local flattenedTestButtons = flattenModuleButtonMap(allTestButtons, modName, moduleName)
     TestFramework.RunByModule(modName, moduleName, 
         function(results)
@@ -183,11 +199,14 @@ function TestFrameworkUi:runTestsModule(modName, moduleName, moduleButton, allTe
                     TestFrameworkUi.updateErrorButton(button.parent, result.error)
                 end
             end
+
+            CodeCoverageUi.rebuildUis()
         end
     )
 end
 
 function TestFrameworkUi:runTestsName(modName, moduleName, testName, testButton)
+    self:clearButtons()
     TestFramework.RunByTest(modName, moduleName, testName, function(results)
         local fullName = modName .. "." .. moduleName .. "." .. testName
         colorButtonWithResults(testButton, results[fullName])
@@ -195,6 +214,8 @@ function TestFrameworkUi:runTestsName(modName, moduleName, testName, testButton)
         if testButton.parent then
             TestFrameworkUi.updateErrorButton(testButton.parent, results[fullName].error)
         end
+
+        CodeCoverageUi.rebuildUis()
     end)
 end
 
@@ -232,22 +253,28 @@ function TestFrameworkUi:rebuildScrollPanel()
     layout.paddingY = 6
 
     self.collapseMap = {}
+    self.allButtons = {}
 
     local buttonsByMod = {}
 
+
     local width = self.scrollPanel:getWidth() - layout.marginX*2 - scrollbarWidth + 5
     for modName, moduleGroup in pairs(TestFramework.modules) do
-        local modCollapseList = CollapseList:new(0, 0, width, 20)
+        local modCollapseList = CollapseList:new(0, 0, width, 24)
 
-        local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width-modCollapseList.marginX, 20)
+        local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width-modCollapseList.marginX, 24)
+        horizontalLayout.borderColor = BORDER_COLOR
+        horizontalLayout.marginY = 2
+        
         local modLabel = ISLabel:new(0, 0, 20, modName, 1, 1, 1, 1, UIFont.Medium)
-        local spacer = ISLabel:new(0, 0, 20, "  ", 1, 1, 1, 1, UIFont.Small)
-        local modCoverageButton = ISButton:new(0, 0, 26, 20, "CC", self, openModCoverageLambda(modName))
+        local modCoverageButton = ISButton:new(0, 0, 22, 22, "CC", self, openModCoverageLambda(modName))
         modCoverageButton:initialise()
+        modCoverageButton.borderColor = {r=1, g=1, b=1, a=0.9}
 
+        horizontalLayout:addSpacer(5)
         horizontalLayout:addElement(modLabel)
-        horizontalLayout:addElement(spacer)
-        horizontalLayout:addElement(modCoverageButton)
+        horizontalLayout:addSpacer(10)
+        horizontalLayout:addRightAnchoredChild(modCoverageButton, 88, 1)
 
         modCollapseList:addElement(horizontalLayout)
 
@@ -267,19 +294,20 @@ function TestFrameworkUi:rebuildScrollPanel()
         for _, moduleName in ipairs(moduleNames) do
             local module = moduleGroup[moduleName]
 
-            local moduleCollapseList = CollapseList:new(0, 0, width, 20)
+            local moduleCollapseList = CollapseList:new(0, 0, width, 24)
             local width = width - moduleCollapseList.marginX
 
-            local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width, 20)
-            local spacer = ISLabel:new(0, 0, 20, "  ", 1, 1, 1, 1, UIFont.Small)
-            local moduleLabel = ISLabel:new(0, 0, 20, moduleName, 1, 1, 1, 1, UIFont.Small)
-            horizontalLayout:addElement(spacer)
-            horizontalLayout:addElement(moduleLabel)
-            horizontalLayout:addElement(spacer)
+            local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width, 24)
+            horizontalLayout.borderColor = BORDER_COLOR
+            horizontalLayout.marginY = 2
 
-            local coverageButton = ISButton:new(0, 0, 26, 20, "CC", self, openCoverageLambda(modName, moduleName))
+            local moduleLabel = ISLabel:new(0, 0, 20, moduleName, 1, 1, 1, 1, UIFont.Medium)
+            horizontalLayout:addSpacer(5)
+            horizontalLayout:addElement(moduleLabel)
+
+            local coverageButton = ISButton:new(0, 0, 24, 24, "CC", self, openCoverageLambda(modName, moduleName))
             coverageButton:initialise()
-            horizontalLayout:addElement(coverageButton)
+            horizontalLayout:addRightAnchoredChild(coverageButton, 76, 0)
 
             moduleCollapseList:addElement(horizontalLayout)
 
@@ -289,24 +317,27 @@ function TestFrameworkUi:rebuildScrollPanel()
             self.collapseMap[modName .. "." .. moduleName] = moduleCollapseList
 
             for _, testName in ipairs(module:getTestNames()) do
-                local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width, 20)
+                local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width, 24)
+                horizontalLayout.borderColor = BORDER_COLOR
+                horizontalLayout.marginY = 2
+                horizontalLayout.marginLeft = 8
 
-
-                local spacer = ISLabel:new(0, 0, 20, "    ", 1, 1, 1, 1, UIFont.Small)
                 local testLabel = ISLabel:new(0, 0, 20, testName, 1, 1, 1, 1, UIFont.Small)
-                local runTestsButton = ISButton:new(0, 0, 40, 20, "Run Test", self, runTestsNameLambda(modName, moduleName, testName))
+                local runTestsButton = ISButton:new(0, 0, 40, 24, "Run Test", self, runTestsNameLambda(modName, moduleName, testName))
                 runTestsButton:initialise()
                 runTestsButton:instantiate()
                 
-                local showErrorButton = ISButton:new(0, 0, 20, 20, "E", self, TestFrameworkUi.openTestError)
+                table.insert(self.allButtons, runTestsButton)
+
+                local showErrorButton = ISButton:new(0, 0, 24, 24, "E", self, TestFrameworkUi.openTestError)
                 showErrorButton:initialise()
                 showErrorButton:instantiate()
                 showErrorButton:setVisible(false)
 
-                horizontalLayout:addElement(spacer)
+                horizontalLayout:addSpacer(5)
                 horizontalLayout:addElement(testLabel)
                 horizontalLayout:addRightAnchoredChild(runTestsButton, 0, 0)
-                horizontalLayout:addRightAnchoredChild(showErrorButton, 60, 0)
+                horizontalLayout:addRightAnchoredChild(showErrorButton, 58, 0)
 
                 horizontalLayout.errorButton = showErrorButton
 
@@ -315,18 +346,25 @@ function TestFrameworkUi:rebuildScrollPanel()
                 allModuleButtons[testName] = runTestsButton
             end
             
-            local runTestsButton = ISButton:new(0, 0, 40, 20, "Run Module", self, runTestsModuleLambda(modName, moduleName, allModuleButtons))
+            local runTestsButton = ISButton:new(0, 0, 40, 24, "Run Module", self, runTestsModuleLambda(modName, moduleName, allModuleButtons))
             horizontalLayout:addRightAnchoredChild(runTestsButton, 0, 0)
             
             moduleParentButtons[modName..moduleName] = runTestsButton
+            table.insert(self.allButtons, runTestsButton)
 
             modCollapseList:addElement(moduleCollapseList)
         end
 
-        local runTestsButton = ISButton:new(0, 0, 60, 20, "Run All", self, runTestsModLambda(modName, allTestButtons, moduleParentButtons))
-        horizontalLayout:addRightAnchoredChild(runTestsButton, 0, 0)
+        local runTestsButton = ISButton:new(0, 0, 85, 22, "Run All Tests", self, runTestsModLambda(modName, allTestButtons, moduleParentButtons))
+        horizontalLayout:addRightAnchoredChild(runTestsButton, 1, 1)
+
+        table.insert(self.allButtons, runTestsButton)
 
         layout:addElement(modCollapseList)
+    end
+
+    for _, button in ipairs(self.allButtons) do
+        button.borderColor = {r=1, g=1, b=1, a=0.9}
     end
 
     self.scrollPanel:addElement(layout)
@@ -340,13 +378,13 @@ function TestFrameworkUi:setVisible(visible)
 end
 
 function TestFrameworkUi:openCoverage(modName, moduleName)
-    local coverageUi = CodeCoverageUi:new(0, 0, 350, 600, modName, moduleName)
+    local coverageUi = CodeCoverageUi:new(0, 0, 400, 600, modName, moduleName)
     coverageUi:initialise()
     coverageUi:addToUIManager()
 end
 
 function TestFrameworkUi:openModCoverage(modName)
-    local coverageUi = CodeCoverageUi:new(0, 0, 350, 600, modName, nil)
+    local coverageUi = CodeCoverageUi:new(0, 0, 400, 600, modName, nil)
     coverageUi:initialise()
     coverageUi:addToUIManager()
 end

@@ -14,10 +14,14 @@ function ___TestFrameworkBinder.onKey(key)
     if key == openKey then
         local uiInstance = ___TestFrameworkBinder.uiInstance
         if uiInstance then
+            local wasVisible = uiInstance:isVisible()
             uiInstance:removeFromUIManager()
             ___TestFrameworkBinder.previousUiInstance = uiInstance
             ___TestFrameworkBinder.uiInstance = nil -- Throw away the instance, easier to work on features this way
-            return
+
+            if wasVisible then
+                return
+            end
         end
 
         local width = 425
