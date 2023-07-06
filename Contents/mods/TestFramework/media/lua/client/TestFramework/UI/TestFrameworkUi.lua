@@ -56,6 +56,12 @@ local openCoverageLambda = function (modName, moduleName)
     end
 end
 
+local openModCoverageLambda = function (modName)
+    return function(self, button)
+        self:openModCoverage(modName)
+    end
+end
+
 local function colorButtonWithResults(button, results)
     local allPassed = true
 
@@ -224,10 +230,16 @@ function TestFrameworkUi:rebuildScrollPanel()
 
         local horizontalLayout = HorizontalLayout:new(modCollapseList.marginX, 0, width-modCollapseList.marginX, 20)
         local modLabel = ISLabel:new(0, 0, 20, modName, 1, 1, 1, 1, UIFont.Medium)
+        local spacer = ISLabel:new(0, 0, 20, "  ", 1, 1, 1, 1, UIFont.Small)
+        local modCoverageButton = ISButton:new(0, 0, 26, 20, "CC", self, openModCoverageLambda(modName))
+        modCoverageButton:initialise()
+
         horizontalLayout:addElement(modLabel)
-        
+        horizontalLayout:addElement(spacer)
+        horizontalLayout:addElement(modCoverageButton)
+
         modCollapseList:addElement(horizontalLayout)
-    
+
         local allTestButtons = {}
         local moduleParentButtons = {}
         buttonsByMod[modName] = allTestButtons
@@ -306,6 +318,12 @@ end
 
 function TestFrameworkUi:openCoverage(modName, moduleName)
     local coverageUi = CodeCoverageUi:new(0, 0, 350, 600, modName, moduleName)
+    coverageUi:initialise()
+    coverageUi:addToUIManager()
+end
+
+function TestFrameworkUi:openModCoverage(modName)
+    local coverageUi = CodeCoverageUi:new(0, 0, 350, 600, modName, nil)
     coverageUi:initialise()
     coverageUi:addToUIManager()
 end

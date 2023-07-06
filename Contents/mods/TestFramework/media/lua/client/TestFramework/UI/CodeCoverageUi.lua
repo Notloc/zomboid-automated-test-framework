@@ -51,10 +51,30 @@ function CodeCoverageUi:buildScrollPanel()
     layout.marginY = 8
     layout.paddingY = 6
 
-    local module = TestFramework.getModule(self.modName, self.moduleName)
-    if not module then return end
+    local coverageTargets = {}
 
-    local coverageTargets = module:getCodeCoverageTargets()
+    if self.modName and self.moduleName then
+        local module = TestFramework.getModule(self.modName, self.moduleName)
+        if not module then return end
+        coverageTargets = module:getCodeCoverageTargets()
+    elseif self.modName then
+        local modules = TestFramework.getModules(self.modName)
+        if not modules then return end
+
+        local seenTargets = {}
+
+        for _, module in pairs(modules) do
+            local targets = module:getCodeCoverageTargets()
+            for _, target in ipairs(targets) do
+                if not seenTargets[target.target] then
+                    seenTargets[target.target] = true
+                    table.insert(coverageTargets, target)
+                end
+            end
+        end
+    else
+        return
+    end
 
     local width = self.scrollPanel:getWidth() - layout.marginX*2
     for _, data in ipairs(coverageTargets) do
@@ -119,7 +139,7 @@ end
 CodeCoverageUi.prerender = function(self)
     ISPanel.prerender(self)
 
-    local title = "Code Coverage: " .. self.moduleName
+    local title = "Code Coverage: " .. (self.moduleName or self.modName)
 
     self:drawRect(0, 0, self.width, 30, 1, 0.15, 0.15, 0.25)
     self:drawTextCentre(title, self.width / 2 + 1, 3, 0, 0.1, 0.6, 1, UIFont.Large)
