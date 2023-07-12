@@ -1,7 +1,7 @@
 # zomboid-automated-test-framework
 A simple framework for writing unit tests for your Project Zomboid mods.
 
-Open the UI in-game using the PERIOD key on the Numpad. (Remappable via the game's keybind area)
+Open the UI in-game using the EQUALS key on the number row. (Remappable via the game's keybind area)
 
 Refer to the included examplea for how to create tests. Its fairly straightforward and simple.
 
