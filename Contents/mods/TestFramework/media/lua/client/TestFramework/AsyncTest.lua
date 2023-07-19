@@ -1,5 +1,12 @@
 local TestUtils = require("TestFramework/TestUtils")
 
+---@class AsyncTest
+---@field steps table
+---@field completed boolean
+---@field results table
+---@field currentStep number
+---@field lastTime number
+---@field _finallyCallbacks table
 local AsyncTest = {}
 
 local NEXT = "next"
@@ -20,6 +27,7 @@ local function getMostRecentError()
     return errors:get(errors:size() - 1) .. "\n\n" .. errors:get(errors:size() - 2)
 end
 
+---@return AsyncTest
 function AsyncTest:new()
     local o = {}
     setmetatable(o, self)
