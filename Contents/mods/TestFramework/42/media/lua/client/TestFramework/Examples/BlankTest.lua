@@ -1,4 +1,4 @@
-if not getActivatedMods():contains("TEST_FRAMEWORK") or not isDebugEnabled() then return end -- Testing is only supported in debug mode and users should not have to have this mod enabled to play your mod
+if not getActivatedMods():contains("\\TEST_FRAMEWORK") or not isDebugEnabled() then return end -- Testing is only supported in debug mode and users should not have to have this mod enabled to play your mod
 local TestFramework = require("TestFramework/TestFramework") -- Will be nil if debug mode is not enabled
 local TestUtils = require("TestFramework/TestUtils")
 local AsyncTest = require("TestFramework/AsyncTest")
